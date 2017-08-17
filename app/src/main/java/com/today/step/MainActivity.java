@@ -1,5 +1,7 @@
 package com.today.step;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +20,11 @@ import android.widget.TextView;
 import com.today.step.lib.ISportStepInterface;
 import com.today.step.lib.VitalityStepService;
 
+import org.apache.log4j.chainsaw.Main;
+
+/**
+ * Created by Yikun on 2017/8/17.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "MainActivity";
@@ -32,11 +39,27 @@ public class MainActivity extends AppCompatActivity {
 
     private ISportStepInterface iSportStepInterface;
 
+    private TextView stepTextView;
+    private TextView tv_day;
+    private String REVEIVER_TAG = "RECORD_CLOCK";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initUI();
+        startVitalityStepService();
+//        recordSteps();
+    }
 
+    private void recordSteps() {
+        Intent intent = new Intent(REVEIVER_TAG);
+        intent.putExtra(getApplicationContext().getString(R.string.steps),tv_day.getText().toString());
+        PendingIntent pIntent = PendingIntent.getBroadcast(MainActivity.this,0,intent,0);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),3*1000,pIntent);
+    }
+
+    private void startVitalityStepService() {
         Intent intent = new Intent(this, VitalityStepService.class);
         startService(intent);
         bindService(intent, new ServiceConnection() {
@@ -45,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
                 iSportStepInterface = ISportStepInterface.Stub.asInterface(service);
                 try {
                     mStepSum = iSportStepInterface.getCurrTimeSportStep();
-                    updateStepCount();
+                    updateStepCount();//更新步数
+
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -58,6 +82,11 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }, Context.BIND_AUTO_CREATE);
+    }
+
+    private void initUI() {
+        stepTextView = (TextView)findViewById(R.id.stepTextView);
+        tv_day = (TextView)findViewById(R.id.tv_day);
     }
 
     class TodayStepCounterCall implements Handler.Callback{
@@ -90,12 +119,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateStepCount() {
         Log.e(TAG,"updateStepCount : " + mStepSum);
-        TextView stepTextView = (TextView)findViewById(R.id.stepTextView);
         stepTextView.setText(mStepSum + "步");
-    }
-
-    public void onClick(View view){
-        Intent intent = new Intent(this, SHealthActivity.class);
-        startActivity(intent);
     }
 }

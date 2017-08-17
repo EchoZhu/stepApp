@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">TodayStepCounter</string>
+    <string name="app_name">StepCounter</string>
+    <string name="steps">steps</string>
 </resources>
